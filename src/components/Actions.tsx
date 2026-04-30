@@ -4,14 +4,15 @@ import { RESOURCES } from "../data/resources";
 import { RECIPES } from "../data/recipes";
 import type { RecipeDef } from "../data/recipes";
 
+const gatherables = Object.values(RESOURCES).filter((r) => r.gatherAmt !== undefined);
+
 function GatherButton({ resourceId }: { resourceId: string }) {
     const def = RESOURCES[resourceId];
-    const resources = useGameStore((s) => s.resources);
-    const cooldowns = useGameStore((s) => s.cooldowns);
+    const amount = useGameStore((s) => s.resources[resourceId]);
+    const cd = useGameStore((s) => s.cooldowns[resourceId] ?? 0);
     const gather = useGameStore((s) => s.gather);
 
-    const cd = cooldowns[resourceId] ?? 0;
-    const atCap = resources[resourceId] >= def.cap;
+    const atCap = amount >= def.cap;
     const disabled = cd > 0 || atCap;
 
     return (
@@ -22,6 +23,7 @@ function GatherButton({ resourceId }: { resourceId: string }) {
         </button>
     );
 }
+
 
 function CraftButton({ recipe }: { recipe: RecipeDef }) {
     const resources = useGameStore((s) => s.resources);
@@ -45,8 +47,6 @@ function CraftButton({ recipe }: { recipe: RecipeDef }) {
 }
 
 export default function Actions() {
-    const gatherables = Object.values(RESOURCES).filter((r) => r.gatherAmt !== undefined);
-
     return (
         <div className="actions">
             <h2>Actions</h2>

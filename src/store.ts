@@ -27,25 +27,26 @@ export const useGameStore = create<GameState>((set, get) => ({
 
     tick: (delta) => {
         const { resources, cooldowns } = get();
+        const update: Partial<GameState> = {};
 
-        const nextResources = { ...resources };
-        for (const def of Object.values(RESOURCES)) {
-            if (def.rate) {
-                nextResources[def.id] = Math.min(
-                    def.cap,
-                    nextResources[def.id] + def.rate * delta,
-                );
+        const passives = Object.values(RESOURCES).filter((d) => d.rate);
+        const anyBelowCap = passives.some((d) => resources[d.id] < d.cap);
+        if (anyBelowCap) {
+            const nextResources = { ...resources };
+            for (const def of passives) {
+                nextResources[def.id] = Math.min(def.cap, nextResources[def.id] + def.rate! * delta);
             }
+            update.resources = nextResources;
         }
 
-        const nextCooldowns = Object.fromEntries(
-            Object.entries(cooldowns).map(([id, cd]) => [
-                id,
-                Math.max(0, cd - delta),
-            ]),
-        );
+        const anyCooldownActive = Object.values(cooldowns).some((cd) => cd > 0);
+        if (anyCooldownActive) {
+            update.cooldowns = Object.fromEntries(
+                Object.entries(cooldowns).map(([id, cd]) => [id, Math.max(0, cd - delta)]),
+            );
+        }
 
-        set({ resources: nextResources, cooldowns: nextCooldowns });
+        if (Object.keys(update).length > 0) set(update);
     },
 
     gather: (resourceId) => {

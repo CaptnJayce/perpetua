@@ -5,6 +5,7 @@ export interface ResourceDef {
     label: string;
     cap: number;
     category: ResourceCategory;
+    displayAsInt?: boolean;
     rate?: number; // passive generation per second, if any
     gatherAmt?: number; // amount gained per gather press, if gatherable
     gatherCd?: number; // cooldown in seconds between gather presses
@@ -31,5 +32,6 @@ export const RESOURCES: Record<string, ResourceDef> = {
         label: "Cog",
         cap: 50,
         category: "partial",
+        displayAsInt: true,
     },
 };

@@ -11,7 +11,7 @@ export default function Resources() {
             {Object.values(RESOURCES).map((def) => (
                 <p key={def.id}>
                     {def.label}: {
-                        def.category === "partial" || def.category === "crafted"
+                        def.displayAsInt
                             ? Math.floor(resources[def.id])
                             : resources[def.id].toFixed(1)
                     } / {def.cap}

@@ -26,12 +26,16 @@ function GatherButton({ resourceId }: { resourceId: string }) {
 
 
 function CraftButton({ recipe }: { recipe: RecipeDef }) {
-    const resources = useGameStore((s) => s.resources);
+    const canAfford = useGameStore((s) =>
+        recipe.inputs.every(({ resId, amnt }) => s.resources[resId] >= amnt),
+    );
+    const atCap = useGameStore((s) => {
+        const outputDef = RESOURCES[recipe.output.resId];
+        return s.resources[recipe.output.resId] + recipe.output.amnt > outputDef.cap;
+    });
     const craft = useGameStore((s) => s.craft);
 
     const outputDef = RESOURCES[recipe.output.resId];
-    const canAfford = recipe.inputs.every(({ resId, amnt }) => resources[resId] >= amnt);
-    const atCap = resources[recipe.output.resId] + recipe.output.amnt > outputDef.cap;
     const disabled = !canAfford || atCap;
 
     const costLabel = recipe.inputs

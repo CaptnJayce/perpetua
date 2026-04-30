@@ -21,6 +21,8 @@ const initialCooldowns = Object.fromEntries(
         .map((r) => [r.id, 0]),
 );
 
+const PASSIVE_RESOURCES = Object.values(RESOURCES).filter((d) => d.rate);
+
 export const useGameStore = create<GameState>((set, get) => ({
     resources: initialResources,
     cooldowns: initialCooldowns,
@@ -28,15 +30,16 @@ export const useGameStore = create<GameState>((set, get) => ({
     tick: (delta) => {
         const { resources, cooldowns } = get();
         const update: Partial<GameState> = {};
+        let dirty = false;
 
-        const passives = Object.values(RESOURCES).filter((d) => d.rate);
-        const anyBelowCap = passives.some((d) => resources[d.id] < d.cap);
+        const anyBelowCap = PASSIVE_RESOURCES.some((d) => resources[d.id] < d.cap);
         if (anyBelowCap) {
             const nextResources = { ...resources };
-            for (const def of passives) {
+            for (const def of PASSIVE_RESOURCES) {
                 nextResources[def.id] = Math.min(def.cap, nextResources[def.id] + def.rate! * delta);
             }
             update.resources = nextResources;
+            dirty = true;
         }
 
         const anyCooldownActive = Object.values(cooldowns).some((cd) => cd > 0);
@@ -44,9 +47,10 @@ export const useGameStore = create<GameState>((set, get) => ({
             update.cooldowns = Object.fromEntries(
                 Object.entries(cooldowns).map(([id, cd]) => [id, Math.max(0, cd - delta)]),
             );
+            dirty = true;
         }
 
-        if (Object.keys(update).length > 0) set(update);
+        if (dirty) set(update);
     },
 
     gather: (resourceId) => {

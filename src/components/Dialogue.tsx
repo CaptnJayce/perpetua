@@ -1,12 +1,5 @@
 import "./Dialogue.css";
-
-const NPCS = [
-    { id: "npc1", name: "NPC 1" },
-    { id: "npc2", name: "NPC 2" },
-    { id: "npc3", name: "NPC 3" },
-    { id: "npc4", name: "NPC 4" },
-    { id: "npc5", name: "NPC 5" },
-];
+import { NPCS, PORTRAIT_PLACEHOLDER } from "../data/npcs";
 
 export default function Dialogue() {
     return (
@@ -15,7 +8,7 @@ export default function Dialogue() {
             <div className="npc-portraits">
                 {NPCS.map((npc) => (
                     <button key={npc.id} className="npc-portrait" title={npc.name}>
-                        <img src="/portrait-placeholder.jpg" alt={npc.name} />
+                        <img src={npc.portrait ?? PORTRAIT_PLACEHOLDER} alt={npc.name} />
                     </button>
                 ))}
             </div>

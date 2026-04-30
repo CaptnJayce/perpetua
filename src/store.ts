@@ -1,64 +1,94 @@
 import { create } from "zustand";
-
-// prp = perpetual energy | tmp = template metal | cd = cooldown | dur = duration
+import { RESOURCES } from "./data/resources";
+import { RECIPES } from "./data/recipes";
 
 interface GameState {
-    prp: number;
-    prpCap: number;
-    prpRate: number;
-
-    tmp: number;
-    tmpCap: number;
-    tmpCd: number;
-    tmpCdDur: number;
-
-    cogs: number;
-    cogCap: number;
-    cogCost: { prp: number; tmp: number };
+    resources: Record<string, number>;
+    cooldowns: Record<string, number>;
 
     tick: (delta: number) => void;
-    mineTmp: () => void;
-    craftCog: () => void;
+    gather: (resourceId: string) => void;
+    craft: (recipeId: string) => void;
 }
 
+const initialResources = Object.fromEntries(
+    Object.keys(RESOURCES).map((id) => [id, 0]),
+);
+
+const initialCooldowns = Object.fromEntries(
+    Object.values(RESOURCES)
+        .filter((r) => r.gatherCd !== undefined)
+        .map((r) => [r.id, 0]),
+);
+
 export const useGameStore = create<GameState>((set, get) => ({
-    prp: 0,
-    prpCap: 100,
-    prpRate: 1,
-
-    tmp: 0,
-    tmpCap: 50,
-    tmpCd: 0,
-    tmpCdDur: 3,
-
-    cogs: 0,
-    cogCap: 50,
-    cogCost: { prp: 2, tmp: 1 },
+    resources: initialResources,
+    cooldowns: initialCooldowns,
 
     tick: (delta) => {
-        const { prp, prpCap, prpRate, tmpCd } = get();
+        const { resources, cooldowns } = get();
+
+        const nextResources = { ...resources };
+        for (const def of Object.values(RESOURCES)) {
+            if (def.rate) {
+                nextResources[def.id] = Math.min(
+                    def.cap,
+                    nextResources[def.id] + def.rate * delta,
+                );
+            }
+        }
+
+        const nextCooldowns = Object.fromEntries(
+            Object.entries(cooldowns).map(([id, cd]) => [
+                id,
+                Math.max(0, cd - delta),
+            ]),
+        );
+
+        set({ resources: nextResources, cooldowns: nextCooldowns });
+    },
+
+    gather: (resourceId) => {
+        const def = RESOURCES[resourceId];
+        if (!def?.gatherAmt || !def?.gatherCd) return;
+
+        const { resources, cooldowns } = get();
+        if (cooldowns[resourceId] > 0 || resources[resourceId] >= def.cap)
+            return;
+
         set({
-            prp: Math.min(prpCap, prp + prpRate * delta),
-            tmpCd: Math.max(0, tmpCd - delta),
+            resources: {
+                ...resources,
+                [resourceId]: Math.min(
+                    def.cap,
+                    resources[resourceId] + def.gatherAmt,
+                ),
+            },
+            cooldowns: { ...cooldowns, [resourceId]: def.gatherCd },
         });
     },
 
-    mineTmp: () => {
-        const { tmp, tmpCap, tmpCd, tmpCdDur } = get();
-        if (tmpCd > 0 || tmp >= tmpCap) return;
-        set({
-            tmp: Math.min(tmpCap, tmp + 5),
-            tmpCd: tmpCdDur,
-        });
-    },
+    craft: (recipeId) => {
+        const recipe = RECIPES[recipeId];
+        if (!recipe) return;
 
-    craftCog: () => {
-        const { prp, tmp, cogs, cogCap, cogCost } = get();
-        if (prp < cogCost.prp || tmp < cogCost.tmp || cogs >= cogCap) return;
-        set({
-            prp: prp - cogCost.prp,
-            tmp: tmp - cogCost.tmp,
-            cogs: cogs + 1,
-        });
+        const { resources } = get();
+
+        const canCraft = recipe.inputs.every(
+            ({ resId, amnt }) => resources[resId] >= amnt,
+        );
+        const outputDef = RESOURCES[recipe.output.resId];
+        const atCap =
+            resources[recipe.output.resId] + recipe.output.amnt > outputDef.cap;
+
+        if (!canCraft || atCap) return;
+
+        const nextResources = { ...resources };
+        for (const { resId, amnt } of recipe.inputs) {
+            nextResources[resId] -= amnt;
+        }
+        nextResources[recipe.output.resId] += recipe.output.amnt;
+
+        set({ resources: nextResources });
     },
 }));

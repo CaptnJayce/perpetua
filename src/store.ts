@@ -32,11 +32,16 @@ export const useGameStore = create<GameState>((set, get) => ({
         const update: Partial<GameState> = {};
         let dirty = false;
 
-        const anyBelowCap = PASSIVE_RESOURCES.some((d) => resources[d.id] < d.cap);
+        const anyBelowCap = PASSIVE_RESOURCES.some(
+            (d) => resources[d.id] < d.cap,
+        );
         if (anyBelowCap) {
             const nextResources = { ...resources };
             for (const def of PASSIVE_RESOURCES) {
-                nextResources[def.id] = Math.min(def.cap, nextResources[def.id] + def.rate! * delta);
+                nextResources[def.id] = Math.min(
+                    def.cap,
+                    nextResources[def.id] + def.rate! * delta,
+                );
             }
             update.resources = nextResources;
             dirty = true;
@@ -45,7 +50,10 @@ export const useGameStore = create<GameState>((set, get) => ({
         const anyCooldownActive = Object.values(cooldowns).some((cd) => cd > 0);
         if (anyCooldownActive) {
             update.cooldowns = Object.fromEntries(
-                Object.entries(cooldowns).map(([id, cd]) => [id, Math.max(0, cd - delta)]),
+                Object.entries(cooldowns).map(([id, cd]) => [
+                    id,
+                    Math.max(0, cd - delta),
+                ]),
             );
             dirty = true;
         }

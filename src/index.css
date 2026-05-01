@@ -1,0 +1,33 @@
+:root {
+    --iron: #1a1014;
+    --burgundy: #6e2f3b;
+    --brass: #c9872c;
+    --leather: #7a4a2a;
+    --parchment: #e8d5a3;
+    --verdigris: #4a7a6e;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    font-family: sans-serif;
+    background: var(--iron);
+    color: var(--parchment);
+}
+
+#root {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
